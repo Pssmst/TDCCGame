@@ -112,7 +112,7 @@ function wrapText(ctx, text, fontSize, font, textboxWidth) {
     return wrapped;
 }
 
-export function displayText(ctx, text, font="EightBitDragon", color="#ffffff", fontSize=16, x=20, y=20) {
+export function drawText(ctx, text, font="EightBitDragon", color="#ffffff", fontSize=16, x=20, y=20, verticalSpacing=1.4) {
     // Set font, baseline, and fill style once
     ctx.font = fontSize + "px " + font;
     ctx.textBaseline = "top";
@@ -121,12 +121,9 @@ export function displayText(ctx, text, font="EightBitDragon", color="#ffffff", f
     // Split the text by newline characters
     const lines = text.split('\n');
 
-    // Define vertical spacing for each line
-    const verticalSpacing = fontSize * 1.4; // You can adjust this multiplier as needed
-
     // Draw each line
     for (let i = 0; i < lines.length; i++) {
-        const lineY = y + i * verticalSpacing;
+        const lineY = y + i * fontSize * verticalSpacing;
         ctx.fillText(lines[i], x, lineY);
     }
 }
@@ -151,7 +148,7 @@ export function drawLine(ctx, x1, y1, x2, y2, color = "#ffffff", lineWidth = 1) 
     ctx.stroke();
 }
 
-export function displayRect(ctx, x, y, width, height, color = "#ffffff") {
+export function drawRect(ctx, x, y, width, height, color = "#ffffff") {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, width, height);
 }

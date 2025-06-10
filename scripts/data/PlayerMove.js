@@ -18,12 +18,12 @@ export class PlayerAttack extends PlayerMove {
         this.sound      = sound;
     }
 
-    execute(player, enemyTargets) {
+    execute(player, targets) {
         // Deduct charge from the player
         player.charge = Math.max(0, player.charge - this.chargeCost);
 
         // Apply damage to each target in turn
-        enemyTargets.forEach(enemy => {
+        targets.forEach(enemy => {
             enemy.hp = Math.max(0, enemy.hp - this.damage);
         });
         playSound(`../assets/sounds/${this.sound}`);
@@ -85,12 +85,20 @@ export class PlayerAction extends PlayerMove {
         this.sound      = sound;
     }
 
-    execute(player, enemyTargets) {
+    execute(player, targets) {
         playSound(`../assets/sounds/${this.sound}`);
     }
 }
 
+export class Defend extends PlayerAction {
+    constructor() {
+        super('Defend', 'Defend', '');
+    }
 
+    execute(player, targets) {
+        player.defense += 5; // Example: increase defense by 5
+    }
+}
 export class Check extends PlayerAction {
     constructor() {
         super('Check', 'Check', '');

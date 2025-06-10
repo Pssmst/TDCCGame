@@ -1,4 +1,4 @@
-import { handleDialog, displayText, displayRect, drawLine, playSound, getTextWidth, randomChoice } from './dialog.js';
+import { handleDialog, drawText, drawRect, drawLine, playSound, getTextWidth, randomChoice } from './dialog.js';
 
 const font = "EightBitDragon";
 
@@ -76,6 +76,13 @@ export function battle(canvas, uiCanvas, players, enemies) {
     document.addEventListener("pointerdown", tryPlayBattleMusic, { once: true });
     document.addEventListener("keydown", tryPlayBattleMusic, { once: true });
 
+    // Player (x,y) display variables
+    const ANGLE = 24 * Math.PI / 180; // DEGREES * Math.PI / 180
+    const X_OFFSET = 30;
+    const HIGHEST_VERTICAL_END = 60;
+    const LOWEST_VERTICAL_END = 240;
+
+    // Menu navigation variables
     let menuMode = 0;
     let selectedPlayer = 0;
     let selectedOption = -1;
@@ -86,12 +93,12 @@ export function battle(canvas, uiCanvas, players, enemies) {
     let sequence = [];
     let drawingDialog = false;
     let goodToGo = true;
+    let barCrush = 1;
 
+    // Customizable menu variables
     const fontSize = 18;
     const healthColor = "#38b045";
     const healthLostColor = "#c43127";
-    let barCrush = 1;
-    
     const playerNamesX = 80;
     const playerNamesY = 326;
     const healthTextWidth = 54;
@@ -122,8 +129,6 @@ export function battle(canvas, uiCanvas, players, enemies) {
             case 2: // Item
                 return players[selectedPlayer].inventory.consumables;
                 break;
-            case 3: // Defend
-                return [];
         }
     }
 
@@ -144,10 +149,10 @@ export function battle(canvas, uiCanvas, players, enemies) {
             const cellY = startY + row * cellH;
 
             /*// Debug
-            displayRect(ctx, cellX, cellY, cellW, 1, "#ff0000");             // top edge
-            displayRect(ctx, cellX, cellY + cellH - 1, cellW, 1, "#ff0000"); // bottom edge
-            displayRect(ctx, cellX, cellY, 1, cellH, "#ff0000");             // left edge
-            displayRect(ctx, cellX + cellW - 1, cellY, 1, cellH, "#ff0000"); // right edge
+            drawRect(ctx, cellX, cellY, cellW, 1, "#ff0000");             // top edge
+            drawRect(ctx, cellX, cellY + cellH - 1, cellW, 1, "#ff0000"); // bottom edge
+            drawRect(ctx, cellX, cellY, 1, cellH, "#ff0000");             // left edge
+            drawRect(ctx, cellX + cellW - 1, cellY, 1, cellH, "#ff0000"); // right edge
 
             ctx.lineWidth = 1;
             ctx.strokeStyle = "green";
@@ -170,7 +175,7 @@ export function battle(canvas, uiCanvas, players, enemies) {
                 }
             }
 
-            displayText(ctx, name, font, txtColor, fontSize, cellX, cellY);
+            drawText(ctx, name, font, txtColor, fontSize, cellX, cellY);
         });
     }
 
@@ -208,7 +213,7 @@ export function battle(canvas, uiCanvas, players, enemies) {
     let texturesLoaded = false;
     const cache = {};
     
-    // ——— Preload all textures into cache ———
+    // Preload all textures into cache
     function preloadImages(callback) {
         let count = 0;
         const keys = Object.keys(textures);
@@ -247,8 +252,6 @@ export function battle(canvas, uiCanvas, players, enemies) {
         ctx.drawImage(cache.frame, 34, 298, 284*2, 78*2);
         ctx.drawImage(cache.frameBeam, beamX, 298+16, 4*2, 62*2);
 
-        drawLine(ctx, 0, 480, 100, 0, "#ffffff", 2);
-
         // FOR EACH PLAYER
         players.forEach((player, index) => {
             const barWidth = healthScaleFormula(player.maxHP);
@@ -278,7 +281,7 @@ export function battle(canvas, uiCanvas, players, enemies) {
             }
 
             // Draw name of player
-            displayText(ctx, player.name.toUpperCase(), font, playerColor, fontSize, playerNamesX, universalY);
+            drawText(ctx, player.name.toUpperCase(), font, playerColor, fontSize, playerNamesX, universalY);
 
             // Draw health
             const healthRemainingWidth = barWidth * (player.hp / player.maxHP);
@@ -287,12 +290,12 @@ export function battle(canvas, uiCanvas, players, enemies) {
             const barY = universalY + 11;
             const lostHealthStartX = barStartX + healthRemainingWidth;
             
-            if (player.hp > 0) displayRect(ctx, barStartX, universalY, healthRemainingWidth, 8, healthColor);
-            displayRect(ctx, lostHealthStartX, universalY, barWidth - healthRemainingWidth, 8, healthLostColor);
+            if (player.hp > 0) drawRect(ctx, barStartX, universalY, healthRemainingWidth, 8, healthColor);
+            drawRect(ctx, lostHealthStartX, universalY, barWidth - healthRemainingWidth, 8, healthLostColor);
             
             if (index != 1) {
                 // background (empty) bar
-                displayRect(ctx, barStartX, barY, barWidth, 5, getPlayerColors(players.indexOf(player))[1]);
+                drawRect(ctx, barStartX, barY, barWidth, 5, getPlayerColors(players.indexOf(player))[1]);
 
                 // Create a 3‐stop gradient over the *entire* bar width:
                 const grad = ctx.createLinearGradient(barStartX, barY, barStartX + barWidth, barY);
@@ -305,8 +308,8 @@ export function battle(canvas, uiCanvas, players, enemies) {
                 ctx.fillRect(barStartX, barY, barWidth * (player.charge / player.maxCharge), 5);
             }
             else {
-                // Draw overlay
-                ctx.drawImage(cache[`destinCharge${player.charge}`], barStartX + barWidth-42, universalY + 4, 44, 12);
+                let destinBarWidth = barWidth < 44 ? barWidth : 44;
+                ctx.drawImage(cache[`destinCharge${player.charge}`], barStartX + barWidth - destinBarWidth + 2, universalY + 4, destinBarWidth, 12);
             }
 
             const healthStr = `${String(player.hp)}/${String(player.maxHP)}`;
@@ -315,10 +318,10 @@ export function battle(canvas, uiCanvas, players, enemies) {
             const trueChargeTextWidth = getTextWidth(ctx, chargeStr, font, 16)/2;
 
             // Draw health numbers
-            displayText(ctx, healthStr, 'm5x7', player.hp > 0 ? playerColor : "#ff0000", 16, barEndX + (beamX - barEndX - trueHealthTextWidth) / 2 + 1, universalY - 5);
+            drawText(ctx, healthStr, 'm5x7', player.hp > 0 ? playerColor : "#ff0000", 16, barEndX + (beamX - barEndX - trueHealthTextWidth) / 2 + 1, universalY - 5);
 
             // Draw charge numbers
-            displayText(ctx, chargeStr, 'm5x7', playerColor, 16, barEndX + (beamX - barEndX - trueChargeTextWidth) / 2 + 1, universalY + 4);
+            drawText(ctx, chargeStr, 'm5x7', playerColor, 16, barEndX + (beamX - barEndX - trueChargeTextWidth) / 2 + 1, universalY + 4);
         });
 
         // Draw selected things
@@ -334,7 +337,7 @@ export function battle(canvas, uiCanvas, players, enemies) {
                     24, 24
                 );
 
-                displayText(
+                drawText(
                     ctx, 
                     name.toUpperCase(),
                     font,
@@ -367,29 +370,66 @@ export function battle(canvas, uiCanvas, players, enemies) {
                     break;
 
                 case 3: // Defend
-                    sequence.push([players[selectedPlayer], getOptionChoice(selectedOption), players[selectedPlayer], selectedPlayer, selectedOption, selectedOption2]);
+                    sequence.push([players[selectedPlayer], players[selectedPlayer].defend[0], [players[selectedPlayer]], selectedPlayer, selectedOption, selectedOption2]);
                     menuMode = 0;
                     selectedOption = -1;
                     break;
             }
         }
 
-        // DRAW CHARACTERS
-        displayRect(ctx, 10, 10, 40, 40, "blue");
-        displayRect(ctx, 10, 60, 40, 40, "gray");
-        displayRect(ctx, 10, 110, 40, 40, "teal");
-        displayRect(ctx, 10, 160, 40, 40, "orange");
-
-        displayRect(ctx, 500, 100, 40, 40, "red");
-        if (targetEnemy === 0) {
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = "yellow";
-            ctx.strokeRect(500, 100, 40, 40);
-        }
+        /*// DEBUG
+        drawLine(ctx, 0-X_OFFSET, 480, 480*Math.tan(ANGLE)-X_OFFSET, 0, "#ffffff", 2);
+        drawLine(ctx, 640+X_OFFSET, 480, 640 - 480*Math.tan(ANGLE)+X_OFFSET, 0, "#ffffff", 2);
         
-        displayText(ctx, `menuMode: ${menuMode}\nselectedPlayer: ${selectedPlayer}\nselectedOption: ${selectedOption}\nselectedOption2: ${selectedOption2}\ntargetEnemy: ${targetEnemy}`, font, "white", fontSize, 100, 10);
-        displayText(ctx, `Enemy Health: ${enemies[0].hp}`, font, "white", fontSize, 100, 150);
+        const debugText = `menuMode: ${menuMode}\nselectedPlayer: ${selectedPlayer}\nselectedOption: ${selectedOption}\nselectedOption2: ${selectedOption2}\ntargetEnemy: ${targetEnemy}\ntargetPlayer: ${targetPlayer}\n\nEnemy Health: ${enemies[0].hp}`;
+        drawText(ctx, debugText, 'm5x7', "white", fontSize, 5, 0, .7); //*/
 
+        const squareSize = 50; // Uhhh
+
+        // calculate your endpoints once
+        const xHigh = (480 - HIGHEST_VERTICAL_END) * Math.tan(ANGLE) - X_OFFSET;
+        const yHigh = HIGHEST_VERTICAL_END;
+        const xLow  = (480 - LOWEST_VERTICAL_END)  * Math.tan(ANGLE) - X_OFFSET;
+        const yLow  = LOWEST_VERTICAL_END;
+        const n = players.length;
+
+        ctx.save();
+        for (let i = 0; i < n; i++) {
+            // t runs from 0 (first item) to 1 (last item)
+            const t = n > 1 ? i / (n - 1) : 0.5;
+
+            // interpolate
+            const x = xHigh + (xLow - xHigh) * t;
+            const y = yHigh + (yLow - yHigh) * t;
+
+            const color = ["red", "blue", "green", "orange"][i % 4];
+
+            // center the square at (x,y)
+            drawRect(ctx, x - squareSize / 2, y - squareSize / 2, squareSize, squareSize, color);
+        }
+        ctx.restore();
+
+        // mirror endpoints for the right line
+        const xHighR = 640 - xHigh;
+        const xLowR = 640 - xLow;
+        const m = enemies.length;
+
+        ctx.save();
+        for (let j = 0; j < m; j++) {
+            // t from 0→1 inclusive so first enemy at (xHighR,yHigh), last at (xLowR,yLow)
+            const t = m > 1 ? j / (m - 1) : 0.5;
+
+            // interpolate along the right line
+            const xE = xHighR + (xLowR - xHighR) * t;
+            const yE = yHigh + (yLow - yHigh) * t;
+
+            // pick a color for each enemy (customize as needed)
+            const eColor = ["magenta", "yellow", "cyan", "white"][j % 4];
+
+            // draw a square centered at (xE,yE)
+            drawRect(ctx, xE - squareSize / 2, yE - squareSize / 2, squareSize, squareSize, eColor);
+        }
+        ctx.restore();
     }
 
     // Single animation loop
@@ -543,19 +583,19 @@ export function battle(canvas, uiCanvas, players, enemies) {
                 targetEnemy = -1;
                 targetPlayer = -1;
 
-                if (sequence.length === players.length) {
-                    // Add in enemy attack
-                    sequence.push([enemies[0], enemies[0].attacks[0], [randomChoice(players)], selectedPlayer, selectedOption, selectedOption2]);
-
-                    (async () => {
-                        await executeSequence();
-                    })();
-                }
-
                 return;
             }
 
             if (goodToGo) menuMode++;
+
+            if (sequence.length === players.length) {
+                // Add in enemy attack
+                sequence.push([enemies[0], enemies[0].attacks[0], [randomChoice(players)], selectedPlayer, selectedOption, selectedOption2]);
+
+                (async () => {
+                    await executeSequence();
+                })();
+            }
         }
         else if (["KeyX", "Escape"].includes(event.code) && !drawingDialog) {
             if (menuMode === 0 && sequence.length > 0) {

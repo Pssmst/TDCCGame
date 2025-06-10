@@ -19,6 +19,7 @@ import {
     Nunchucks,
     BlueCrown,
 
+    Defend,
     Check,
     Flee,
     LesterHealingPotion,
@@ -70,8 +71,8 @@ const uiCtx = uiCanvas.getContext("2d", { alpha: true });
 // Resize to full window
 function resizeCanvas(canvas, ctx) {
     const dpr = window.devicePixelRatio || 1;
-    canvas.style.width  = "640px";
-    canvas.style.height = "480px";
+    canvas.width  = "640px";
+    canvas.height = "480px";
     canvas.width  = 640 * dpr;
     canvas.height = 480 * dpr;
     ctx.scale(dpr, dpr);
@@ -128,6 +129,13 @@ players[3].inventory.weapons = [  ];
 players[3].inventory.armor = [  ];
 players[3].inventory.equippedWeapon = new ClimbingHelmet();
 players[3].inventory.equippedArmor = new NoArmor();
+
+//// ACTIONS ////
+
+players[0].defend = [ new Defend() ];
+players[1].defend = [ new Defend() ];
+players[2].defend = [ new Defend() ];
+players[3].defend = [ new Defend() ];
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
