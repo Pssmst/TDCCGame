@@ -1,0 +1,53 @@
+@font-face {
+    font-family: 'DeterminationMono';
+    src: url('assets/fonts/DeterminationMonoWebRegular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'DeterminationSans';
+    src: url('assets/fonts/DeterminationSansWebRegular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'EightBitDragon';
+    src: url('assets/fonts/EightBitDragon.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'm5x7';
+    src: url('assets/fonts/m5x7.ttf') format('truetype');
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+
+    background-image: url(assets/textures/bg.png);
+
+    /* By default, images that are too small repeat vertically and horizontally */
+    background-repeat: no-repeat;
+    background-position: center; /* Centers horizontally */
+
+    /* Sets whether a backgorund image scrolls with the rest of the page or if it's fixed */
+    background-attachment: fixed;
+
+    /* Makes the image take up the entire space of the webpage */
+    background-size: cover;
+}
+
+canvas {
+    display: block;
+    width: 640px;
+    height: 480px;
+    background-color: #000000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .25);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    position: absolute;
+}
+
+#uiCanvas {
+    background-color: transparent;
+}
