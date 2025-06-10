@@ -76,20 +76,33 @@ export function battle(canvas, uiCanvas, players, enemies) {
     document.addEventListener("pointerdown", tryPlayBattleMusic, { once: true });
     document.addEventListener("keydown", tryPlayBattleMusic, { once: true });
 
-    // Player (x,y) display variables
-    const ANGLE = 24 * Math.PI / 180; // DEGREES * Math.PI / 180
-    const X_OFFSET = 30;
-    const HIGHEST_VERTICAL_END = 60;
-    const LOWEST_VERTICAL_END = 240;
+    // Player display variables (ANGLE = DEGREES * Math.PI / 180)
+    const INIT_ANGLE = 24 * Math.PI / 180;
+    const ACTIVE_ANGLE = INIT_ANGLE-.15;
+
+    const INIT_X_OFFSET = 30;
+    const ACTIVE_X_OFFSET = -40;
+
+    const INIT_MAX_VERTICAL_POINT = 60;
+    const ACTIVE_MAX_VERTICAL_POINT = 0 + 100;
+
+    const INIT_MIN_VERTICAL_POINT = 240;
+    const ACTIVE_MIN_VERTICAL_POINT = 480 - 100;
+
+    let ANGLE = INIT_ANGLE;
+    let X_OFFSET = INIT_X_OFFSET;
+    let MAX_VERTICAL_POINT = INIT_MAX_VERTICAL_POINT;
+    let MIN_VERTICAL_POINT = INIT_MIN_VERTICAL_POINT;
 
     // Menu navigation variables
     let menuMode = 0;
     let selectedPlayer = 0;
     let selectedOption = -1;
     let selectedOption2 = -1;
+    let targetGroup   = -1;
+    let targetPlayer  = 0;
+    let targetEnemy   = 0;
     let choice;
-    let targetEnemy = -1;
-    let targetPlayer = -1;
     let sequence = [];
     let drawingDialog = false;
     let goodToGo = true;
@@ -99,11 +112,16 @@ export function battle(canvas, uiCanvas, players, enemies) {
     const fontSize = 18;
     const healthColor = "#38b045";
     const healthLostColor = "#c43127";
+    const darkerColor = "#383838";
     const playerNamesX = 80;
-    const playerNamesY = 326;
     const healthTextWidth = 54;
     const barDistanceFromPlayerNamesX = 100;
     const endOfFrameX = 34 + 284*2 - 10;
+
+    const init_playerNamesY = 326;
+    const active_playerNamesY = 520;
+
+    let playerNamesY = init_playerNamesY;
 
     function ease(current, target, easeFactor) {
         return current + (target - current) * easeFactor;
@@ -132,9 +150,13 @@ export function battle(canvas, uiCanvas, players, enemies) {
         }
     }
 
-    function optionsGrid(array, maxRows, maxCols, tableW, tableH, startX, startY, listAmount = false) {
+    function optionsGrid(array, maxRows, maxCols, tableW, tableH, startX, startY, showDescription=false) {
         const cellW = tableW / maxCols;
         const cellH = tableH / maxRows + ((tableH/maxRows - fontSize)/maxRows);
+
+        if (showDescription) {
+            drawText(ctx, array[selectedOption2].description, font, darkerColor, fontSize, startX, startY-cellH*2 - fontSize, 1.4);
+        }
 
         // 3) Loop over each object in the array (stop if we exceed maxRows×maxCols)
         array.forEach((obj, index) => {
@@ -159,7 +181,6 @@ export function battle(canvas, uiCanvas, players, enemies) {
             ctx.strokeRect(startX, startY, tableW, tableH); // draw table border*/
 
             const txtColor = (selectedOption2 === index) ? getPlayerColors(selectedPlayer)[0] : "#ffffff";
-
             let name;
 
             if (obj.amount && obj.amount > 1) {
@@ -249,8 +270,8 @@ export function battle(canvas, uiCanvas, players, enemies) {
         goodToGo = !sequence.some(entry => entry[3] == selectedPlayer);
 
         // Draw menu frame and beam
-        ctx.drawImage(cache.frame, 34, 298, 284*2, 78*2);
-        ctx.drawImage(cache.frameBeam, beamX, 298+16, 4*2, 62*2);
+        ctx.drawImage(cache.frame, 34, playerNamesY - 28, 284*2, 78*2);
+        ctx.drawImage(cache.frameBeam, beamX, playerNamesY - 12, 4*2, 62*2);
 
         // FOR EACH PLAYER
         players.forEach((player, index) => {
@@ -258,8 +279,14 @@ export function battle(canvas, uiCanvas, players, enemies) {
             if (selectedOption != 3) {
                 barCrush = ease(barCrush, (menuMode < 2) ? 1 : 2, 0.01);
             }
+            const cond1 = !(menuMode === 3);
+            playerNamesY = ease(playerNamesY, (cond1 ? init_playerNamesY : active_playerNamesY), 0.02);
+            MAX_VERTICAL_POINT = ease(MAX_VERTICAL_POINT, (cond1 ? INIT_MAX_VERTICAL_POINT : ACTIVE_MAX_VERTICAL_POINT), 0.02); 
+            MIN_VERTICAL_POINT = ease(MIN_VERTICAL_POINT, (cond1 ? INIT_MIN_VERTICAL_POINT : ACTIVE_MIN_VERTICAL_POINT), 0.02); 
+            X_OFFSET = ease(X_OFFSET, (cond1 ? INIT_X_OFFSET : ACTIVE_X_OFFSET), 0.02); 
+            ANGLE = ease(ANGLE, (cond1 ? INIT_ANGLE : ACTIVE_ANGLE), 0.02); 
 
-            const playerColor = sequence.some(entry => entry[0] === player) ? "#383838" : selectedPlayer === index ? getPlayerColors(selectedPlayer)[0] : "#ffffff";
+            const playerColor = sequence.some(entry => entry[0] === player) ? darkerColor : selectedPlayer === index ? getPlayerColors(selectedPlayer)[0] : "#ffffff";
             const universalY = playerNamesY + 28*index;
 
             if (player.charge > player.maxCharge) {
@@ -358,11 +385,11 @@ export function battle(canvas, uiCanvas, players, enemies) {
 
             switch (selectedOption) {
                 case 0: // Attack
-                    optionsGrid(players[selectedPlayer].attacks, 4, 2, gridWidth, gridHeight, gridX, playerNamesY);
+                    optionsGrid(players[selectedPlayer].attacks, 4, 2, gridWidth, gridHeight, gridX, playerNamesY, true);
                     break;
                 
                 case 1: // Act
-                    optionsGrid(players[selectedPlayer].actions, 4, 2, gridWidth, gridHeight, gridX, playerNamesY);
+                    optionsGrid(players[selectedPlayer].actions, 4, 2, gridWidth, gridHeight, gridX, playerNamesY, true);
                     break;
 
                 case 2: // Item
@@ -377,22 +404,16 @@ export function battle(canvas, uiCanvas, players, enemies) {
             }
         }
 
-        /*// DEBUG
-        drawLine(ctx, 0-X_OFFSET, 480, 480*Math.tan(ANGLE)-X_OFFSET, 0, "#ffffff", 2);
-        drawLine(ctx, 640+X_OFFSET, 480, 640 - 480*Math.tan(ANGLE)+X_OFFSET, 0, "#ffffff", 2);
-        
-        const debugText = `menuMode: ${menuMode}\nselectedPlayer: ${selectedPlayer}\nselectedOption: ${selectedOption}\nselectedOption2: ${selectedOption2}\ntargetEnemy: ${targetEnemy}\ntargetPlayer: ${targetPlayer}\n\nEnemy Health: ${enemies[0].hp}`;
-        drawText(ctx, debugText, 'm5x7', "white", fontSize, 5, 0, .7); //*/
-
         const squareSize = 50; // Uhhh
 
         // calculate your endpoints once
-        const xHigh = (480 - HIGHEST_VERTICAL_END) * Math.tan(ANGLE) - X_OFFSET;
-        const yHigh = HIGHEST_VERTICAL_END;
-        const xLow  = (480 - LOWEST_VERTICAL_END)  * Math.tan(ANGLE) - X_OFFSET;
-        const yLow  = LOWEST_VERTICAL_END;
+        const xHigh = (480 - MAX_VERTICAL_POINT) * Math.tan(ANGLE) - X_OFFSET;
+        const yHigh = MAX_VERTICAL_POINT;
+        const xLow  = (480 - MIN_VERTICAL_POINT)  * Math.tan(ANGLE) - X_OFFSET;
+        const yLow  = MIN_VERTICAL_POINT;
         const n = players.length;
 
+        // Draw player squares
         ctx.save();
         for (let i = 0; i < n; i++) {
             // t runs from 0 (first item) to 1 (last item)
@@ -401,11 +422,18 @@ export function battle(canvas, uiCanvas, players, enemies) {
             // interpolate
             const x = xHigh + (xLow - xHigh) * t;
             const y = yHigh + (yLow - yHigh) * t;
-
-            const color = ["red", "blue", "green", "orange"][i % 4];
-
+            
             // center the square at (x,y)
-            drawRect(ctx, x - squareSize / 2, y - squareSize / 2, squareSize, squareSize, color);
+            drawRect(ctx, x - squareSize / 2, y - squareSize / 2, squareSize, squareSize, getPlayerColors(i)[0]);
+
+            // Draw yellow outline if selected as target
+            if (targetGroup === 0 && targetPlayer === i && menuMode === 3) {
+                ctx.save();
+                ctx.strokeStyle = "yellow";
+                ctx.lineWidth = 4;
+                ctx.strokeRect(x - squareSize / 2, y - squareSize / 2, squareSize, squareSize);
+                ctx.restore();
+            }
         }
         ctx.restore();
 
@@ -428,8 +456,24 @@ export function battle(canvas, uiCanvas, players, enemies) {
 
             // draw a square centered at (xE,yE)
             drawRect(ctx, xE - squareSize / 2, yE - squareSize / 2, squareSize, squareSize, eColor);
+
+            // Draw yellow outline if selected as target
+            if (targetGroup === 1 && targetEnemy === j && menuMode === 3) {
+                ctx.save();
+                ctx.strokeStyle = "yellow";
+                ctx.lineWidth = 4;
+                ctx.strokeRect(xE - squareSize / 2, yE - squareSize / 2, squareSize, squareSize);
+                ctx.restore();
+            }
         }
         ctx.restore();
+
+        // DEBUG
+        drawLine(ctx, 0-X_OFFSET, 480, 480*Math.tan(ANGLE)-X_OFFSET, 0, "#ffffff", 2);
+        drawLine(ctx, 640+X_OFFSET, 480, 640 - 480*Math.tan(ANGLE)+X_OFFSET, 0, "#ffffff", 2);
+        
+        const debugText = `menuMode: ${menuMode}\nselectedPlayer: ${selectedPlayer}\nselectedOption: ${selectedOption}\nselectedOption2: ${selectedOption2}\n\ntargetPlayer: ${targetPlayer}\ntargetEnemy: ${targetEnemy}\ntargetGroup: ${targetGroup}\n\nEnemy Health: ${enemies[0].hp}`;
+        drawText(ctx, debugText, 'm5x7', "white", fontSize, 5, 0, .7); //*/
     }
 
     // Single animation loop
@@ -556,8 +600,77 @@ export function battle(canvas, uiCanvas, players, enemies) {
             }
         }
 
-        if (["KeyZ", "Enter"].includes(event.code)) {
+        if (["KeyZ", "Enter"].includes(event.code) && menuMode === 2) {
+            choice = getOptionChoice(selectedOption)[selectedOption2];
 
+            switch (choice.useType) {
+                case 0: // player
+                    targetPlayer = 0;
+                    targetEnemy = -1;
+                    targetGroup = 0;
+                    break;
+                case 1: // enemy
+                    targetPlayer = -1;
+                    targetEnemy = 0;
+                    targetGroup = 1;
+                    break;
+                case 2: // both
+                    targetEnemy = 0;
+                    targetPlayer = 0;
+                    targetGroup = 0;
+                    break;
+            }
+            menuMode = 3;
+            console.log(choice.useType)
+            return;
+        }
+
+        // Only allow target selection in menuMode 3 (or whichever you want)
+        if (menuMode === 3 && !drawingDialog) {
+            const n = players.length, m = enemies.length;
+
+            // group-switch (only if action covers both sides)
+            if ((event.code === "ArrowLeft" || event.code === "ArrowRight") && choice.useType === 2) {
+                targetGroup = 1 - targetGroup;
+                playSound(`../assets/sounds/select.wav`, .5, 0.01);
+            }
+
+            // move within the active group
+            if (targetGroup === 0) {
+                if (event.code === "ArrowUp")   targetPlayer = (targetPlayer - 1 + n) % n;
+                if (event.code === "ArrowDown") targetPlayer = (targetPlayer + 1) % n;
+            } else if (targetGroup === 1) {
+                if (event.code === "ArrowUp")   targetEnemy = (targetEnemy - 1 + m) % m;
+                if (event.code === "ArrowDown") targetEnemy = (targetEnemy + 1) % m;
+            }
+
+            // confirm
+            if (["KeyZ","Enter"].includes(event.code)) {
+                const tgt = targetGroup === 0 ? [players[targetPlayer]] : [enemies[targetEnemy]];
+                sequence.push([players[selectedPlayer], choice, tgt, selectedPlayer, selectedOption, selectedOption2]);
+
+                // reset
+                menuMode  = 0;
+                selectedOption = -1;
+                selectedOption2 = -1;
+                targetGroup = -1;
+                targetPlayer = -1;
+                targetEnemy = -1;
+                return;
+            }
+
+            // cancel
+            if (["KeyX","Escape"].includes(event.code)) {
+                // reset
+                menuMode = 2;
+                targetGroup = -1;
+                targetPlayer = -1;
+                targetEnemy = -1;
+                return;
+            }
+        }
+
+        if (["KeyZ", "Enter"].includes(event.code)) {
             if (menuMode === 0) {
                 selectedOption = 0;
             }
@@ -568,9 +681,6 @@ export function battle(canvas, uiCanvas, players, enemies) {
             
             else if (menuMode === 2) {
                 choice = getOptionChoice(selectedOption)[selectedOption2];
-                if (selectedOption === 0) {
-                    targetEnemy = 0;
-                }
             }
 
             else if (menuMode === 3) {
@@ -580,8 +690,6 @@ export function battle(canvas, uiCanvas, players, enemies) {
                 menuMode = 0;
                 selectedOption = -1;
                 selectedOption2 = -1;
-                targetEnemy = -1;
-                targetPlayer = -1;
 
                 return;
             }
@@ -608,8 +716,6 @@ export function battle(canvas, uiCanvas, players, enemies) {
             else {
                 menuMode--;
             }
-            targetEnemy = -1;
-            targetPlayer = -1;
         }
 
         // DEBUG

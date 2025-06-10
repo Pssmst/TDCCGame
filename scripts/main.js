@@ -11,12 +11,16 @@ import {
 import {
     Deadlock,
     DandruffStorm,
+
+    Hit,
     RageSpell,
     DomeShield,
     DoubleTap,
+
     Dash,
-    StealthCloak,
+
     Nunchucks,
+    StealthCloak,
     BlueCrown,
 
     Defend,
@@ -37,7 +41,6 @@ import {
     NutButters,
     SliceOfBananaBread,
     WaterBottle,
-    Carabiners,
     Harness,
     CheddarSunChips,
     SunscreenCan,
@@ -71,8 +74,8 @@ const uiCtx = uiCanvas.getContext("2d", { alpha: true });
 // Resize to full window
 function resizeCanvas(canvas, ctx) {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width  = "640px";
-    canvas.height = "480px";
+    canvas.style.width = "640px";
+    canvas.style.height = "480px";
     canvas.width  = 640 * dpr;
     canvas.height = 480 * dpr;
     ctx.scale(dpr, dpr);
@@ -89,16 +92,16 @@ resizeCanvas(uiCanvas, uiCtx);
 /// ATTACKS ////
 
 players[0].attacks = [ new Deadlock(players[0].att), new DandruffStorm(players[0].att) ];
-players[1].attacks = [ new RageSpell(players[0].att), new DomeShield(players[0].att), new DoubleTap(players[0].att) ];
+players[1].attacks = [ new Hit(players[0].att), new RageSpell(players[0].att), new DomeShield(players[0].att), new DoubleTap(players[0].att) ];
 players[2].attacks = [ new Dash(players[0].att) ];
-players[3].attacks = [ new StealthCloak(players[0].att), new Nunchucks(players[0].att), new BlueCrown(players[0].att) ];
+players[3].attacks = [ new Nunchucks(players[0].att), new StealthCloak(players[0].att), new BlueCrown(players[0].att) ];
 
 //// ACTIONS ////
 
-players[0].actions = [ new Check(), new Flee(), new LesterHealingPotion() ];
-players[1].actions = [ new Check(), new Flee(), new Charge() ];
-players[2].actions = [ new Check(), new Flee(), new BadJoke(), new Ramble() ];
-players[3].actions = [ new Check(), new Flee() ];
+players[0].actions = [ new Check(), /*new Flee(),*/ new LesterHealingPotion() ];
+players[1].actions = [ new Check(), /*new Flee(),*/ new Charge() ];
+players[2].actions = [ new Check(), /*new Flee(),*/ new BadJoke(), new Ramble() ];
+players[3].actions = [ new Check(), /*new Flee(),*/ ];
 
 //// ITEMS ////
 
@@ -116,7 +119,7 @@ players[1].inventory.armor = [  ];
 players[1].inventory.equippedWeapon = new NoWeapon();
 players[1].inventory.equippedArmor = new NoArmor();
 
-players[2].inventory.consumables = [ new Carabiners(8), new Harness(4), new CheddarSunChips(1), new WaterBottle(3) ];
+players[2].inventory.consumables = [ new Harness(4), new CheddarSunChips(1), new WaterBottle(3) ];
 players[2].inventory.keyItems = [ new Wallet(1) ];
 players[2].inventory.weapons = [ new Trowel() ];
 players[2].inventory.armor = [  ];
